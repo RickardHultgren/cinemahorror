@@ -1,1 +1,397 @@
-Cinema Horror
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinema Horror</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        .splash-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, #1a0a0a 0%, #000 70%);
+        }
+
+        /* Film grain effect */
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.15;
+            pointer-events: none;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuNSIvPjwvc3ZnPg==');
+            animation: grain 0.5s steps(10) infinite;
+        }
+
+        @keyframes grain {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -5%); }
+            20% { transform: translate(-10%, 5%); }
+            30% { transform: translate(5%, -10%); }
+            40% { transform: translate(-5%, 15%); }
+            50% { transform: translate(-10%, 5%); }
+            60% { transform: translate(15%, 0); }
+            70% { transform: translate(0, 10%); }
+            80% { transform: translate(-15%, 0); }
+            90% { transform: translate(10%, 5%); }
+        }
+
+        /* Vignette effect */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            box-shadow: inset 0 0 200px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Film reel decorations */
+        .film-strip {
+            position: absolute;
+            width: 100%;
+            height: 40px;
+            background: repeating-linear-gradient(
+                90deg,
+                #1a1a1a 0px,
+                #1a1a1a 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            opacity: 0.3;
+        }
+
+        .film-strip.top {
+            top: 0;
+            border-bottom: 4px solid #2a2a2a;
+        }
+
+        .film-strip.bottom {
+            bottom: 0;
+            border-top: 4px solid #2a2a2a;
+        }
+
+        /* Title */
+        .title {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #8b0000;
+            text-shadow: 
+                0 0 10px rgba(139, 0, 0, 0.8),
+                0 0 20px rgba(139, 0, 0, 0.6),
+                0 0 30px rgba(139, 0, 0, 0.4),
+                2px 2px 0 #000,
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000;
+            letter-spacing: 0.1em;
+            animation: flicker 4s infinite alternate, glitch 3s infinite;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                opacity: 1;
+                text-shadow: 
+                    0 0 10px rgba(139, 0, 0, 0.8),
+                    0 0 20px rgba(139, 0, 0, 0.6),
+                    0 0 30px rgba(139, 0, 0, 0.4),
+                    2px 2px 0 #000,
+                    -2px -2px 0 #000,
+                    2px -2px 0 #000,
+                    -2px 2px 0 #000;
+            }
+            20%, 24%, 55% {
+                opacity: 0.7;
+                text-shadow: none;
+            }
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% {
+                transform: translate(0);
+            }
+            92% {
+                transform: translate(-2px, 2px);
+            }
+            94% {
+                transform: translate(2px, -2px);
+            }
+            96% {
+                transform: translate(-2px, -2px);
+            }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            animation: fadeIn 2s ease-in;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Loading bar */
+        .loading-container {
+            width: 400px;
+            max-width: 80%;
+            margin-top: 2rem;
+            animation: fadeIn 3s ease-in;
+        }
+
+        .loading-text {
+            color: #8b0000;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-bar-outer {
+            width: 100%;
+            height: 4px;
+            background: #1a0a0a;
+            border: 1px solid #2a0a0a;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loading-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, 
+                #8b0000 0%, 
+                #ff0000 50%, 
+                #8b0000 100%
+            );
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(139, 0, 0, 0.8);
+            animation: bloodFlow 2s infinite;
+        }
+
+        @keyframes bloodFlow {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(139, 0, 0, 0.8);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.9);
+            }
+        }
+
+        /* Scanline effect */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(transparent, rgba(255, 255, 255, 0.1));
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        /* Custom cursor */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #8b0000;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            box-shadow: 0 0 10px rgba(139, 0, 0, 0.5);
+        }
+
+        .custom-cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 4px;
+            background: #8b0000;
+            border-radius: 50%;
+        }
+
+        /* Press any key text */
+        .press-key {
+            position: absolute;
+            bottom: 100px;
+            color: #666;
+            font-size: 1rem;
+            letter-spacing: 0.2em;
+            animation: blink 1.5s infinite;
+            opacity: 0;
+        }
+
+        .press-key.visible {
+            opacity: 1;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 0.7; }
+            50%, 100% { opacity: 0.2; }
+        }
+
+        /* Fade out animation */
+        .fade-out {
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 3rem;
+            }
+            .subtitle {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-container" id="splashContainer">
+        <div class="grain"></div>
+        <div class="vignette"></div>
+        <div class="scanline"></div>
+        <div class="film-strip top"></div>
+        <div class="film-strip bottom"></div>
+        
+        <h1 class="title">CINEMA HORROR</h1>
+        <p class="subtitle">Now Showing</p>
+        
+        <div class="loading-container">
+            <div class="loading-text" id="loadingText">Loading...</div>
+            <div class="loading-bar-outer">
+                <div class="loading-bar-inner" id="loadingBar"></div>
+            </div>
+        </div>
+
+        <div class="press-key" id="pressKey">Press Any Key to Enter</div>
+    </div>
+
+    <div class="custom-cursor" id="cursor"></div>
+
+    <script>
+        // Custom cursor movement
+        const cursor = document.getElementById('cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Loading simulation
+        const loadingBar = document.getElementById('loadingBar');
+        const loadingText = document.getElementById('loadingText');
+        const pressKey = document.getElementById('pressKey');
+        const splashContainer = document.getElementById('splashContainer');
+
+        let progress = 0;
+        const loadingMessages = [
+            'Loading...',
+            'Preparing the cinema...',
+            'Dimming the lights...',
+            'Rolling the film...',
+            'Opening the doors...'
+        ];
+        let messageIndex = 0;
+
+        const loadingInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 100) {
+                progress = 100;
+                clearInterval(loadingInterval);
+                loadingText.textContent = 'Ready';
+                setTimeout(() => {
+                    pressKey.classList.add('visible');
+                }, 500);
+            }
+            
+            loadingBar.style.width = progress + '%';
+            
+            // Change loading message
+            if (progress > (messageIndex + 1) * 20 && messageIndex < loadingMessages.length - 1) {
+                messageIndex++;
+                loadingText.textContent = loadingMessages[messageIndex];
+            }
+        }, 200);
+
+        // Press any key to continue
+        let canProceed = false;
+        setTimeout(() => {
+            canProceed = true;
+        }, 3000);
+
+        function enterGame() {
+            if (canProceed && pressKey.classList.contains('visible')) {
+                splashContainer.classList.add('fade-out');
+                setTimeout(() => {
+                    // Replace this with your game's main page or loading function
+                    console.log('Entering Cinema Horror...');
+                    // window.location.href = 'game.html';
+                    document.body.innerHTML = '<div style="color: #8b0000; font-size: 3rem; text-align: center; margin-top: 20vh; font-family: \'Courier New\', monospace;">Welcome to Cinema Horror...</div>';
+                }, 1000);
+            }
+        }
+
+        document.addEventListener('keydown', enterGame);
+        document.addEventListener('click', enterGame);
+
+        // Ambient sound effect (optional - uncomment and add audio file)
+        // const ambientSound = new Audio('ambient-horror.mp3');
+        // ambientSound.loop = true;
+        // ambientSound.volume = 0.3;
+        // ambientSound.play().catch(e => console.log('Audio autoplay prevented'));
+    </script>
+</body>
+</html>
