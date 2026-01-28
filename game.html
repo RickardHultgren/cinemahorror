@@ -110,7 +110,7 @@
 </head>
 <body>
     <div id="gameContainer">
-        <div id="score">Score: 0 | Lives: 3</div>
+        <div id="score">Time: 0:00 | Lives: 3</div>
         <canvas id="gameCanvas" width="560" height="560"></canvas>
         <div id="controls">
             <button class="control-btn" id="up">▲</button>
@@ -138,32 +138,32 @@
         const COLS = 28;
         const ROWS = 28;
         
-        // Map: 1 = wall, 0 = path with dot, 2 = path without dot, 3 = power pellet
+        // Map: 1 = wall, 0 = empty path
         const MAP = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
-            [1,3,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,3,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
             [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
             [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
             [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,1,1,1,2,2,1,1,1,2,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,1,2,2,2,2,2,2,1,2,1,1,0,1,1,1,1,1,1],
-            [2,2,2,2,2,2,0,2,2,2,1,2,2,2,2,2,2,1,2,2,2,0,2,2,2,2,2,2],
-            [1,1,1,1,1,1,0,1,1,2,1,2,2,2,2,2,2,1,2,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
-            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,0,0,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,0,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,1],
+            [0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0],
+            [1,1,1,1,1,1,0,1,1,0,1,0,0,0,0,0,0,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
             [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
-            [1,3,0,0,1,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,1,0,0,3,1],
+            [1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1],
             [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
             [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
             [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
@@ -178,27 +178,14 @@
                 { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#f0f', startX: 14, startY: 14 },
                 { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#fa0', startX: 15, startY: 14 }
             ],
-            score: 0,
+            timeHours: 0,
+            timeMinutes: 0,
+            frameCount: 0,
             lives: 3,
-            dots: 0,
-            powerMode: false,
-            powerTimer: 0,
             gameOver: false,
+            won: false,
             map: JSON.parse(JSON.stringify(MAP))
         };
-        
-        // Count initial dots
-        function countDots() {
-            let count = 0;
-            for (let row of gameState.map) {
-                for (let cell of row) {
-                    if (cell === 0 || cell === 3) count++;
-                }
-            }
-            return count;
-        }
-        
-        gameState.dots = countDots();
         
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
@@ -268,20 +255,6 @@
                 // Wrap around
                 if (p.x < 0) p.x = COLS - 1;
                 if (p.x >= COLS) p.x = 0;
-                
-                // Collect dots
-                const cell = gameState.map[p.y][p.x];
-                if (cell === 0) {
-                    gameState.score += 10;
-                    gameState.map[p.y][p.x] = 2;
-                    gameState.dots--;
-                } else if (cell === 3) {
-                    gameState.score += 50;
-                    gameState.map[p.y][p.x] = 2;
-                    gameState.dots--;
-                    gameState.powerMode = true;
-                    gameState.powerTimer = 200;
-                }
             }
         }
         
@@ -326,29 +299,22 @@
             for (let i = 0; i < gameState.ghosts.length; i++) {
                 const ghost = gameState.ghosts[i];
                 if (p.x === ghost.x && p.y === ghost.y) {
-                    if (gameState.powerMode) {
-                        // Eat ghost
-                        gameState.score += 200;
-                        ghost.x = ghost.startX;
-                        ghost.y = ghost.startY;
+                    // Lose life
+                    gameState.lives--;
+                    if (gameState.lives <= 0) {
+                        gameState.gameOver = true;
                     } else {
-                        // Lose life
-                        gameState.lives--;
-                        if (gameState.lives <= 0) {
-                            gameState.gameOver = true;
-                        } else {
-                            // Reset positions
-                            p.x = 14;
-                            p.y = 23;
-                            p.dir = { x: 0, y: 0 };
-                            p.nextDir = { x: 0, y: 0 };
-                            for (let g of gameState.ghosts) {
-                                g.x = g.startX;
-                                g.y = g.startY;
-                            }
+                        // Reset positions
+                        p.x = 14;
+                        p.y = 23;
+                        p.dir = { x: 0, y: 0 };
+                        p.nextDir = { x: 0, y: 0 };
+                        for (let g of gameState.ghosts) {
+                            g.x = g.startX;
+                            g.y = g.startY;
                         }
-                        return;
                     }
+                    return;
                 }
             }
         }
@@ -364,18 +330,12 @@
                     if (cell === 1) {
                         ctx.fillStyle = '#00f';
                         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    } else if (cell === 0) {
-                        ctx.fillStyle = '#fff';
-                        ctx.fillRect(x * TILE_SIZE + 8, y * TILE_SIZE + 8, 4, 4);
-                    } else if (cell === 3) {
-                        ctx.fillStyle = '#fff';
-                        ctx.fillRect(x * TILE_SIZE + 6, y * TILE_SIZE + 6, 8, 8);
                     }
                 }
             }
             
             // Draw player
-            ctx.fillStyle = gameState.powerMode ? '#ff0' : '#ff0';
+            ctx.fillStyle = '#ff0';
             ctx.fillRect(
                 gameState.player.x * TILE_SIZE + 2,
                 gameState.player.y * TILE_SIZE + 2,
@@ -385,7 +345,7 @@
             
             // Draw ghosts
             for (let ghost of gameState.ghosts) {
-                ctx.fillStyle = gameState.powerMode ? '#00f' : ghost.color;
+                ctx.fillStyle = ghost.color;
                 ctx.fillRect(
                     ghost.x * TILE_SIZE + 2,
                     ghost.y * TILE_SIZE + 2,
@@ -398,7 +358,11 @@
         function update() {
             if (gameState.gameOver) {
                 gameOverScreen.classList.add('show');
-                finalScoreDisplay.textContent = `Final Score: ${gameState.score}`;
+                if (gameState.won) {
+                    finalScoreDisplay.textContent = `You survived until 24:00! You Win!`;
+                } else {
+                    finalScoreDisplay.textContent = `Game Over! You survived until ${gameState.timeHours}:${String(gameState.timeMinutes).padStart(2, '0')}`;
+                }
                 return;
             }
             
@@ -407,21 +371,25 @@
             moveGhosts();
             checkCollisions();
             
-            if (gameState.powerMode) {
-                gameState.powerTimer--;
-                if (gameState.powerTimer <= 0) {
-                    gameState.powerMode = false;
+            // Update time (60 frames = 1 minute at 10 FPS)
+            gameState.frameCount++;
+            if (gameState.frameCount >= 60) {
+                gameState.frameCount = 0;
+                gameState.timeMinutes++;
+                if (gameState.timeMinutes >= 60) {
+                    gameState.timeMinutes = 0;
+                    gameState.timeHours++;
+                    
+                    // Check win condition
+                    if (gameState.timeHours >= 24) {
+                        gameState.gameOver = true;
+                        gameState.won = true;
+                    }
                 }
             }
             
-            // Check win condition
-            if (gameState.dots <= 0) {
-                gameState.gameOver = true;
-                finalScoreDisplay.textContent = `You Win! Final Score: ${gameState.score}`;
-            }
-            
             draw();
-            scoreDisplay.textContent = `Score: ${gameState.score} | Lives: ${gameState.lives}`;
+            scoreDisplay.textContent = `Time: ${gameState.timeHours}:${String(gameState.timeMinutes).padStart(2, '0')} | Lives: ${gameState.lives}`;
         }
         
         function restartGame() {
@@ -433,15 +401,14 @@
                     { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#f0f', startX: 14, startY: 14 },
                     { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#fa0', startX: 15, startY: 14 }
                 ],
-                score: 0,
+                timeHours: 0,
+                timeMinutes: 0,
+                frameCount: 0,
                 lives: 3,
-                dots: 0,
-                powerMode: false,
-                powerTimer: 0,
                 gameOver: false,
+                won: false,
                 map: JSON.parse(JSON.stringify(MAP))
             };
-            gameState.dots = countDots();
             gameOverScreen.classList.remove('show');
         }
         
