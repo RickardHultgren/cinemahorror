@@ -30,9 +30,16 @@
             gap: 20px;
         }
         
-        #score {
+        #gameInfo {
             font-size: 24px;
             font-weight: bold;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+        }
+        
+        #clock {
+            color: #0ff;
         }
         
         #gameCanvas {
@@ -110,7 +117,10 @@
 </head>
 <body>
     <div id="gameContainer">
-        <div id="score">Time: 0:00 | Lives: 3</div>
+        <div id="gameInfo">
+            <div id="clock">Time: 0:00</div>
+            <div id="lives">Lives: 3</div>
+        </div>
         <canvas id="gameCanvas" width="560" height="560"></canvas>
         <div id="controls">
             <button class="control-btn" id="up">▲</button>
@@ -129,7 +139,8 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const scoreDisplay = document.getElementById('score');
+        const clockDisplay = document.getElementById('clock');
+        const livesDisplay = document.getElementById('lives');
         const gameOverScreen = document.getElementById('gameOver');
         const finalScoreDisplay = document.getElementById('finalScore');
         const restartBtn = document.getElementById('restartBtn');
@@ -389,7 +400,8 @@
             }
             
             draw();
-            scoreDisplay.textContent = `Time: ${gameState.timeHours}:${String(gameState.timeMinutes).padStart(2, '0')} | Lives: ${gameState.lives}`;
+            clockDisplay.textContent = `Time: ${gameState.timeHours}:${String(gameState.timeMinutes).padStart(2, '0')}`;
+            livesDisplay.textContent = `Lives: ${gameState.lives}`;
         }
         
         function restartGame() {
