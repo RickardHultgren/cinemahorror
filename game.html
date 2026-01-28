@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Pac-Man</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #00f;
+            background: #000;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #controls {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .control-btn {
+            background: #333;
+            border: 2px solid #666;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:active {
+            background: #555;
+        }
+        
+        #up { grid-column: 2; grid-row: 1; }
+        #left { grid-column: 1; grid-row: 2; }
+        #right { grid-column: 3; grid-row: 2; }
+        #down { grid-column: 2; grid-row: 3; }
+        
+        #gameOver {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border: 3px solid #f00;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        #gameOver.show {
+            display: block;
+        }
+        
+        #restartBtn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 18px;
+            background: #00f;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        
+        #restartBtn:hover {
+            background: #00a;
+        }
+        
+        @media (max-width: 600px) {
+            #gameCanvas {
+                max-width: 90vw;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Score: 0 | Lives: 3</div>
+        <canvas id="gameCanvas" width="560" height="560"></canvas>
+        <div id="controls">
+            <button class="control-btn" id="up">▲</button>
+            <button class="control-btn" id="left">◄</button>
+            <button class="control-btn" id="right">►</button>
+            <button class="control-btn" id="down">▼</button>
+        </div>
+    </div>
+    
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p id="finalScore"></p>
+        <button id="restartBtn">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+        
+        const TILE_SIZE = 20;
+        const COLS = 28;
+        const ROWS = 28;
+        
+        // Map: 1 = wall, 0 = path with dot, 2 = path without dot, 3 = power pellet
+        const MAP = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,3,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,3,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+            [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,2,2,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,2,2,2,2,2,2,1,2,1,1,0,1,1,1,1,1,1],
+            [2,2,2,2,2,2,0,2,2,2,1,2,2,2,2,2,2,1,2,2,2,0,2,2,2,2,2,2],
+            [1,1,1,1,1,1,0,1,1,2,1,2,2,2,2,2,2,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+            [1,3,0,0,1,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,1,0,0,3,1],
+            [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+            [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+            [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        let gameState = {
+            player: { x: 14, y: 23, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 } },
+            ghosts: [
+                { x: 12, y: 14, dir: { x: 1, y: 0 }, color: '#f00', startX: 12, startY: 14 },
+                { x: 13, y: 14, dir: { x: -1, y: 0 }, color: '#0ff', startX: 13, startY: 14 },
+                { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#f0f', startX: 14, startY: 14 },
+                { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#fa0', startX: 15, startY: 14 }
+            ],
+            score: 0,
+            lives: 3,
+            dots: 0,
+            powerMode: false,
+            powerTimer: 0,
+            gameOver: false,
+            map: JSON.parse(JSON.stringify(MAP))
+        };
+        
+        // Count initial dots
+        function countDots() {
+            let count = 0;
+            for (let row of gameState.map) {
+                for (let cell of row) {
+                    if (cell === 0 || cell === 3) count++;
+                }
+            }
+            return count;
+        }
+        
+        gameState.dots = countDots();
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': gameState.player.nextDir = { x: 0, y: -1 }; break;
+                case 'ArrowDown': gameState.player.nextDir = { x: 0, y: 1 }; break;
+                case 'ArrowLeft': gameState.player.nextDir = { x: -1, y: 0 }; break;
+                case 'ArrowRight': gameState.player.nextDir = { x: 1, y: 0 }; break;
+            }
+        });
+        
+        // Touch controls
+        document.getElementById('up').addEventListener('click', () => gameState.player.nextDir = { x: 0, y: -1 });
+        document.getElementById('down').addEventListener('click', () => gameState.player.nextDir = { x: 0, y: 1 });
+        document.getElementById('left').addEventListener('click', () => gameState.player.nextDir = { x: -1, y: 0 });
+        document.getElementById('right').addEventListener('click', () => gameState.player.nextDir = { x: 1, y: 0 });
+        
+        // Gamepad support
+        function handleGamepad() {
+            const gamepads = navigator.getGamepads();
+            if (!gamepads) return;
+            
+            for (let gamepad of gamepads) {
+                if (!gamepad) continue;
+                
+                // D-pad or left stick
+                if (gamepad.axes[1] < -0.5 || gamepad.buttons[12]?.pressed) {
+                    gameState.player.nextDir = { x: 0, y: -1 };
+                } else if (gamepad.axes[1] > 0.5 || gamepad.buttons[13]?.pressed) {
+                    gameState.player.nextDir = { x: 0, y: 1 };
+                } else if (gamepad.axes[0] < -0.5 || gamepad.buttons[14]?.pressed) {
+                    gameState.player.nextDir = { x: -1, y: 0 };
+                } else if (gamepad.axes[0] > 0.5 || gamepad.buttons[15]?.pressed) {
+                    gameState.player.nextDir = { x: 1, y: 0 };
+                }
+                
+                // A button to restart
+                if (gamepad.buttons[0]?.pressed && gameState.gameOver) {
+                    restartGame();
+                }
+            }
+        }
+        
+        function canMove(x, y) {
+            if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
+            return gameState.map[y][x] !== 1;
+        }
+        
+        function movePlayer() {
+            const p = gameState.player;
+            
+            // Try to change direction
+            const nextX = p.x + p.nextDir.x;
+            const nextY = p.y + p.nextDir.y;
+            if (canMove(nextX, nextY)) {
+                p.dir = { ...p.nextDir };
+            }
+            
+            // Move in current direction
+            const newX = p.x + p.dir.x;
+            const newY = p.y + p.dir.y;
+            
+            if (canMove(newX, newY)) {
+                p.x = newX;
+                p.y = newY;
+                
+                // Wrap around
+                if (p.x < 0) p.x = COLS - 1;
+                if (p.x >= COLS) p.x = 0;
+                
+                // Collect dots
+                const cell = gameState.map[p.y][p.x];
+                if (cell === 0) {
+                    gameState.score += 10;
+                    gameState.map[p.y][p.x] = 2;
+                    gameState.dots--;
+                } else if (cell === 3) {
+                    gameState.score += 50;
+                    gameState.map[p.y][p.x] = 2;
+                    gameState.dots--;
+                    gameState.powerMode = true;
+                    gameState.powerTimer = 200;
+                }
+            }
+        }
+        
+        function moveGhosts() {
+            for (let ghost of gameState.ghosts) {
+                // Simple AI: random direction changes
+                if (Math.random() < 0.05) {
+                    const dirs = [
+                        { x: 0, y: -1 },
+                        { x: 0, y: 1 },
+                        { x: -1, y: 0 },
+                        { x: 1, y: 0 }
+                    ];
+                    ghost.dir = dirs[Math.floor(Math.random() * dirs.length)];
+                }
+                
+                const newX = ghost.x + ghost.dir.x;
+                const newY = ghost.y + ghost.dir.y;
+                
+                if (canMove(newX, newY)) {
+                    ghost.x = newX;
+                    ghost.y = newY;
+                    
+                    // Wrap around
+                    if (ghost.x < 0) ghost.x = COLS - 1;
+                    if (ghost.x >= COLS) ghost.x = 0;
+                } else {
+                    // Change direction if hit wall
+                    const dirs = [
+                        { x: 0, y: -1 },
+                        { x: 0, y: 1 },
+                        { x: -1, y: 0 },
+                        { x: 1, y: 0 }
+                    ];
+                    ghost.dir = dirs[Math.floor(Math.random() * dirs.length)];
+                }
+            }
+        }
+        
+        function checkCollisions() {
+            const p = gameState.player;
+            for (let i = 0; i < gameState.ghosts.length; i++) {
+                const ghost = gameState.ghosts[i];
+                if (p.x === ghost.x && p.y === ghost.y) {
+                    if (gameState.powerMode) {
+                        // Eat ghost
+                        gameState.score += 200;
+                        ghost.x = ghost.startX;
+                        ghost.y = ghost.startY;
+                    } else {
+                        // Lose life
+                        gameState.lives--;
+                        if (gameState.lives <= 0) {
+                            gameState.gameOver = true;
+                        } else {
+                            // Reset positions
+                            p.x = 14;
+                            p.y = 23;
+                            p.dir = { x: 0, y: 0 };
+                            p.nextDir = { x: 0, y: 0 };
+                            for (let g of gameState.ghosts) {
+                                g.x = g.startX;
+                                g.y = g.startY;
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw map
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const cell = gameState.map[y][x];
+                    if (cell === 1) {
+                        ctx.fillStyle = '#00f';
+                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    } else if (cell === 0) {
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(x * TILE_SIZE + 8, y * TILE_SIZE + 8, 4, 4);
+                    } else if (cell === 3) {
+                        ctx.fillStyle = '#fff';
+                        ctx.fillRect(x * TILE_SIZE + 6, y * TILE_SIZE + 6, 8, 8);
+                    }
+                }
+            }
+            
+            // Draw player
+            ctx.fillStyle = gameState.powerMode ? '#ff0' : '#ff0';
+            ctx.fillRect(
+                gameState.player.x * TILE_SIZE + 2,
+                gameState.player.y * TILE_SIZE + 2,
+                TILE_SIZE - 4,
+                TILE_SIZE - 4
+            );
+            
+            // Draw ghosts
+            for (let ghost of gameState.ghosts) {
+                ctx.fillStyle = gameState.powerMode ? '#00f' : ghost.color;
+                ctx.fillRect(
+                    ghost.x * TILE_SIZE + 2,
+                    ghost.y * TILE_SIZE + 2,
+                    TILE_SIZE - 4,
+                    TILE_SIZE - 4
+                );
+            }
+        }
+        
+        function update() {
+            if (gameState.gameOver) {
+                gameOverScreen.classList.add('show');
+                finalScoreDisplay.textContent = `Final Score: ${gameState.score}`;
+                return;
+            }
+            
+            handleGamepad();
+            movePlayer();
+            moveGhosts();
+            checkCollisions();
+            
+            if (gameState.powerMode) {
+                gameState.powerTimer--;
+                if (gameState.powerTimer <= 0) {
+                    gameState.powerMode = false;
+                }
+            }
+            
+            // Check win condition
+            if (gameState.dots <= 0) {
+                gameState.gameOver = true;
+                finalScoreDisplay.textContent = `You Win! Final Score: ${gameState.score}`;
+            }
+            
+            draw();
+            scoreDisplay.textContent = `Score: ${gameState.score} | Lives: ${gameState.lives}`;
+        }
+        
+        function restartGame() {
+            gameState = {
+                player: { x: 14, y: 23, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 } },
+                ghosts: [
+                    { x: 12, y: 14, dir: { x: 1, y: 0 }, color: '#f00', startX: 12, startY: 14 },
+                    { x: 13, y: 14, dir: { x: -1, y: 0 }, color: '#0ff', startX: 13, startY: 14 },
+                    { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#f0f', startX: 14, startY: 14 },
+                    { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#fa0', startX: 15, startY: 14 }
+                ],
+                score: 0,
+                lives: 3,
+                dots: 0,
+                powerMode: false,
+                powerTimer: 0,
+                gameOver: false,
+                map: JSON.parse(JSON.stringify(MAP))
+            };
+            gameState.dots = countDots();
+            gameOverScreen.classList.remove('show');
+        }
+        
+        restartBtn.addEventListener('click', restartGame);
+        
+        // Game loop
+        setInterval(update, 100);
+        draw();
+    </script>
+</body>
+</html>
