@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Square Pac-Man</title>
+    <title>Square Survival Game</title>
     <style>
         * {
             margin: 0;
@@ -30,16 +30,15 @@
             gap: 20px;
         }
         
-        #gameInfo {
-            font-size: 24px;
+        #timer {
+            font-size: 32px;
             font-weight: bold;
-            display: flex;
-            gap: 30px;
-            justify-content: center;
+            color: #0f0;
         }
         
-        #clock {
-            color: #0ff;
+        #lives {
+            font-size: 24px;
+            font-weight: bold;
         }
         
         #gameCanvas {
@@ -51,9 +50,9 @@
         
         #controls {
             display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 5px;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 10px;
             margin-top: 10px;
         }
         
@@ -61,7 +60,7 @@
             background: #333;
             border: 2px solid #666;
             color: #fff;
-            font-size: 20px;
+            font-size: 24px;
             cursor: pointer;
             user-select: none;
             touch-action: manipulation;
@@ -82,9 +81,9 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border: 3px solid #f00;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border: 4px solid #f00;
             text-align: center;
             z-index: 100;
         }
@@ -93,17 +92,45 @@
             display: block;
         }
         
-        #restartBtn {
+        #gameOver h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        #winScreen {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 100, 0, 0.95);
+            padding: 40px;
+            border: 4px solid #0f0;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        #winScreen.show {
+            display: block;
+        }
+        
+        #winScreen h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #0f0;
+        }
+        
+        #restartBtn, #playAgainBtn {
             margin-top: 20px;
-            padding: 10px 30px;
-            font-size: 18px;
+            padding: 15px 40px;
+            font-size: 20px;
             background: #00f;
             color: #fff;
             border: none;
             cursor: pointer;
         }
         
-        #restartBtn:hover {
+        #restartBtn:hover, #playAgainBtn:hover {
             background: #00a;
         }
         
@@ -117,10 +144,8 @@
 </head>
 <body>
     <div id="gameContainer">
-        <div id="gameInfo">
-            <div id="clock">Time: 0:00</div>
-            <div id="lives">Lives: 3</div>
-        </div>
+        <div id="timer">Time: 0 / 12</div>
+        <div id="lives">Lives: 3</div>
         <canvas id="gameCanvas" width="560" height="560"></canvas>
         <div id="controls">
             <button class="control-btn" id="up">▲</button>
@@ -132,24 +157,32 @@
     
     <div id="gameOver">
         <h2>Game Over!</h2>
-        <p id="finalScore"></p>
+        <p id="finalTime"></p>
         <button id="restartBtn">Play Again</button>
+    </div>
+
+    <div id="winScreen">
+        <h2>WIN!</h2>
+        <p style="font-size: 24px;">You survived for 12 minutes!</p>
+        <button id="playAgainBtn">Play Again</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const clockDisplay = document.getElementById('clock');
+        const timerDisplay = document.getElementById('timer');
         const livesDisplay = document.getElementById('lives');
         const gameOverScreen = document.getElementById('gameOver');
-        const finalScoreDisplay = document.getElementById('finalScore');
+        const winScreen = document.getElementById('winScreen');
+        const finalTimeDisplay = document.getElementById('finalTime');
         const restartBtn = document.getElementById('restartBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
         
         const TILE_SIZE = 20;
         const COLS = 28;
         const ROWS = 28;
         
-        // Map: 1 = wall, 0 = empty path
+        // Map: 1 = wall, 0 = path
         const MAP = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -182,97 +215,139 @@
         ];
         
         let gameState = {
-            player: { x: 14, y: 23, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 } },
+            player: { x: 14, y: 23 },
             ghosts: [
                 { x: 12, y: 14, dir: { x: 1, y: 0 }, color: '#f00', startX: 12, startY: 14 },
                 { x: 13, y: 14, dir: { x: -1, y: 0 }, color: '#0ff', startX: 13, startY: 14 },
                 { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#f0f', startX: 14, startY: 14 },
                 { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#fa0', startX: 15, startY: 14 }
             ],
-            timeHours: 0,
-            timeMinutes: 0,
-            frameCount: 0,
+            time: 0,
             lives: 3,
             gameOver: false,
             won: false,
-            map: JSON.parse(JSON.stringify(MAP))
+            lastMoveTime: Date.now()
         };
         
-        // Keyboard controls
+        let ghostMoveInterval;
+        let timerInterval;
+        
+        // Keyboard controls - move one square per press
         document.addEventListener('keydown', (e) => {
+            if (gameState.gameOver || gameState.won) return;
+            
+            let moved = false;
             switch(e.key) {
-                case 'ArrowUp': gameState.player.nextDir = { x: 0, y: -1 }; break;
-                case 'ArrowDown': gameState.player.nextDir = { x: 0, y: 1 }; break;
-                case 'ArrowLeft': gameState.player.nextDir = { x: -1, y: 0 }; break;
-                case 'ArrowRight': gameState.player.nextDir = { x: 1, y: 0 }; break;
+                case 'ArrowUp': 
+                    moved = tryMove(0, -1);
+                    break;
+                case 'ArrowDown': 
+                    moved = tryMove(0, 1);
+                    break;
+                case 'ArrowLeft': 
+                    moved = tryMove(-1, 0);
+                    break;
+                case 'ArrowRight': 
+                    moved = tryMove(1, 0);
+                    break;
             }
+            if (moved) draw();
         });
         
-        // Touch controls
-        document.getElementById('up').addEventListener('click', () => gameState.player.nextDir = { x: 0, y: -1 });
-        document.getElementById('down').addEventListener('click', () => gameState.player.nextDir = { x: 0, y: 1 });
-        document.getElementById('left').addEventListener('click', () => gameState.player.nextDir = { x: -1, y: 0 });
-        document.getElementById('right').addEventListener('click', () => gameState.player.nextDir = { x: 1, y: 0 });
+        // Touch controls - move one square per click
+        document.getElementById('up').addEventListener('click', () => {
+            if (gameState.gameOver || gameState.won) return;
+            if (tryMove(0, -1)) draw();
+        });
+        document.getElementById('down').addEventListener('click', () => {
+            if (gameState.gameOver || gameState.won) return;
+            if (tryMove(0, 1)) draw();
+        });
+        document.getElementById('left').addEventListener('click', () => {
+            if (gameState.gameOver || gameState.won) return;
+            if (tryMove(-1, 0)) draw();
+        });
+        document.getElementById('right').addEventListener('click', () => {
+            if (gameState.gameOver || gameState.won) return;
+            if (tryMove(1, 0)) draw();
+        });
         
         // Gamepad support
+        let lastGamepadState = {};
         function handleGamepad() {
+            if (gameState.gameOver || gameState.won) return;
+            
             const gamepads = navigator.getGamepads();
             if (!gamepads) return;
             
-            for (let gamepad of gamepads) {
+            for (let i = 0; i < gamepads.length; i++) {
+                const gamepad = gamepads[i];
                 if (!gamepad) continue;
                 
-                // D-pad or left stick
-                if (gamepad.axes[1] < -0.5 || gamepad.buttons[12]?.pressed) {
-                    gameState.player.nextDir = { x: 0, y: -1 };
-                } else if (gamepad.axes[1] > 0.5 || gamepad.buttons[13]?.pressed) {
-                    gameState.player.nextDir = { x: 0, y: 1 };
-                } else if (gamepad.axes[0] < -0.5 || gamepad.buttons[14]?.pressed) {
-                    gameState.player.nextDir = { x: -1, y: 0 };
-                } else if (gamepad.axes[0] > 0.5 || gamepad.buttons[15]?.pressed) {
-                    gameState.player.nextDir = { x: 1, y: 0 };
+                if (!lastGamepadState[i]) {
+                    lastGamepadState[i] = { axes: [0, 0], buttons: [] };
                 }
                 
+                let moved = false;
+                
+                // D-pad or left stick
+                if ((gamepad.axes[1] < -0.5 || gamepad.buttons[12]?.pressed) && 
+                    !(lastGamepadState[i].axes[1] < -0.5 || lastGamepadState[i].buttons[12])) {
+                    moved = tryMove(0, -1);
+                } else if ((gamepad.axes[1] > 0.5 || gamepad.buttons[13]?.pressed) && 
+                           !(lastGamepadState[i].axes[1] > 0.5 || lastGamepadState[i].buttons[13])) {
+                    moved = tryMove(0, 1);
+                } else if ((gamepad.axes[0] < -0.5 || gamepad.buttons[14]?.pressed) && 
+                           !(lastGamepadState[i].axes[0] < -0.5 || lastGamepadState[i].buttons[14])) {
+                    moved = tryMove(-1, 0);
+                } else if ((gamepad.axes[0] > 0.5 || gamepad.buttons[15]?.pressed) && 
+                           !(lastGamepadState[i].axes[0] > 0.5 || lastGamepadState[i].buttons[15])) {
+                    moved = tryMove(1, 0);
+                }
+                
+                if (moved) draw();
+                
                 // A button to restart
-                if (gamepad.buttons[0]?.pressed && gameState.gameOver) {
+                if (gamepad.buttons[0]?.pressed && !lastGamepadState[i].buttons[0] && 
+                    (gameState.gameOver || gameState.won)) {
                     restartGame();
                 }
+                
+                // Save state
+                lastGamepadState[i].axes = [...gamepad.axes];
+                lastGamepadState[i].buttons = gamepad.buttons.map(b => b?.pressed || false);
             }
         }
         
         function canMove(x, y) {
             if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
-            return gameState.map[y][x] !== 1;
+            return MAP[y][x] !== 1;
         }
         
-        function movePlayer() {
-            const p = gameState.player;
-            
-            // Try to change direction
-            const nextX = p.x + p.nextDir.x;
-            const nextY = p.y + p.nextDir.y;
-            if (canMove(nextX, nextY)) {
-                p.dir = { ...p.nextDir };
-            }
-            
-            // Move in current direction
-            const newX = p.x + p.dir.x;
-            const newY = p.y + p.dir.y;
+        function tryMove(dx, dy) {
+            const newX = gameState.player.x + dx;
+            const newY = gameState.player.y + dy;
             
             if (canMove(newX, newY)) {
-                p.x = newX;
-                p.y = newY;
+                gameState.player.x = newX;
+                gameState.player.y = newY;
                 
                 // Wrap around
-                if (p.x < 0) p.x = COLS - 1;
-                if (p.x >= COLS) p.x = 0;
+                if (gameState.player.x < 0) gameState.player.x = COLS - 1;
+                if (gameState.player.x >= COLS) gameState.player.x = 0;
+                
+                checkCollisions();
+                return true;
             }
+            return false;
         }
         
         function moveGhosts() {
+            if (gameState.gameOver || gameState.won) return;
+            
             for (let ghost of gameState.ghosts) {
                 // Simple AI: random direction changes
-                if (Math.random() < 0.05) {
+                if (Math.random() < 0.1) {
                     const dirs = [
                         { x: 0, y: -1 },
                         { x: 0, y: 1 },
@@ -303,28 +378,30 @@
                     ghost.dir = dirs[Math.floor(Math.random() * dirs.length)];
                 }
             }
+            
+            checkCollisions();
+            draw();
         }
         
         function checkCollisions() {
             const p = gameState.player;
-            for (let i = 0; i < gameState.ghosts.length; i++) {
-                const ghost = gameState.ghosts[i];
+            for (let ghost of gameState.ghosts) {
                 if (p.x === ghost.x && p.y === ghost.y) {
                     // Lose life
                     gameState.lives--;
                     if (gameState.lives <= 0) {
                         gameState.gameOver = true;
+                        endGame();
                     } else {
                         // Reset positions
                         p.x = 14;
                         p.y = 23;
-                        p.dir = { x: 0, y: 0 };
-                        p.nextDir = { x: 0, y: 0 };
                         for (let g of gameState.ghosts) {
                             g.x = g.startX;
                             g.y = g.startY;
                         }
                     }
+                    updateDisplay();
                     return;
                 }
             }
@@ -337,8 +414,7 @@
             // Draw map
             for (let y = 0; y < ROWS; y++) {
                 for (let x = 0; x < COLS; x++) {
-                    const cell = gameState.map[y][x];
-                    if (cell === 1) {
+                    if (MAP[y][x] === 1) {
                         ctx.fillStyle = '#00f';
                         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                     }
@@ -366,69 +442,81 @@
             }
         }
         
-        function update() {
-            if (gameState.gameOver) {
-                gameOverScreen.classList.add('show');
-                if (gameState.won) {
-                    finalScoreDisplay.textContent = `You survived until 24:00! You Win!`;
-                } else {
-                    finalScoreDisplay.textContent = `Game Over! You survived until ${gameState.timeHours}:${String(gameState.timeMinutes).padStart(2, '0')}`;
-                }
-                return;
-            }
-            
-            handleGamepad();
-            movePlayer();
-            moveGhosts();
-            checkCollisions();
-            
-            // Update time (60 frames = 1 minute at 10 FPS)
-            gameState.frameCount++;
-            if (gameState.frameCount >= 60) {
-                gameState.frameCount = 0;
-                gameState.timeMinutes++;
-                if (gameState.timeMinutes >= 60) {
-                    gameState.timeMinutes = 0;
-                    gameState.timeHours++;
-                    
-                    // Check win condition
-                    if (gameState.timeHours >= 24) {
-                        gameState.gameOver = true;
-                        gameState.won = true;
-                    }
-                }
-            }
-            
-            draw();
-            clockDisplay.textContent = `Time: ${gameState.timeHours}:${String(gameState.timeMinutes).padStart(2, '0')}`;
+        function updateDisplay() {
+            timerDisplay.textContent = `Time: ${gameState.time} / 12`;
             livesDisplay.textContent = `Lives: ${gameState.lives}`;
         }
         
+        function updateTimer() {
+            if (gameState.gameOver || gameState.won) return;
+            
+            gameState.time++;
+            updateDisplay();
+            
+            if (gameState.time >= 12) {
+                gameState.won = true;
+                winGame();
+            }
+        }
+        
+        function endGame() {
+            clearInterval(ghostMoveInterval);
+            clearInterval(timerInterval);
+            gameOverScreen.classList.add('show');
+            finalTimeDisplay.textContent = `You survived for ${gameState.time} minutes`;
+        }
+        
+        function winGame() {
+            clearInterval(ghostMoveInterval);
+            clearInterval(timerInterval);
+            winScreen.classList.add('show');
+        }
+        
         function restartGame() {
+            // Clear intervals
+            if (ghostMoveInterval) clearInterval(ghostMoveInterval);
+            if (timerInterval) clearInterval(timerInterval);
+            
+            // Reset state
             gameState = {
-                player: { x: 14, y: 23, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 } },
+                player: { x: 14, y: 23 },
                 ghosts: [
                     { x: 12, y: 14, dir: { x: 1, y: 0 }, color: '#f00', startX: 12, startY: 14 },
                     { x: 13, y: 14, dir: { x: -1, y: 0 }, color: '#0ff', startX: 13, startY: 14 },
                     { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#f0f', startX: 14, startY: 14 },
                     { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#fa0', startX: 15, startY: 14 }
                 ],
-                timeHours: 0,
-                timeMinutes: 0,
-                frameCount: 0,
+                time: 0,
                 lives: 3,
                 gameOver: false,
                 won: false,
-                map: JSON.parse(JSON.stringify(MAP))
+                lastMoveTime: Date.now()
             };
+            
+            lastGamepadState = {};
             gameOverScreen.classList.remove('show');
+            winScreen.classList.remove('show');
+            updateDisplay();
+            draw();
+            
+            // Start intervals
+            ghostMoveInterval = setInterval(moveGhosts, 1000); // Ghosts move every second
+            timerInterval = setInterval(updateTimer, 60000); // Timer updates every minute
         }
         
         restartBtn.addEventListener('click', restartGame);
+        playAgainBtn.addEventListener('click', restartGame);
         
-        // Game loop
-        setInterval(update, 100);
+        // Gamepad polling
+        setInterval(handleGamepad, 100);
+        
+        // Initialize game
+        updateDisplay();
         draw();
+        
+        // Start intervals
+        ghostMoveInterval = setInterval(moveGhosts, 1000); // Ghosts move every second
+        timerInterval = setInterval(updateTimer, 60000); // Timer updates every minute (60000ms)
     </script>
 </body>
 </html>
